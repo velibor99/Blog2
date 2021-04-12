@@ -1,16 +1,9 @@
 <?php include("path.php"); ?>
 <?php include(ROOT_PATH . '/app/controllers/posts.php');
+unBanUsers();
 
-//an to make sure email is valid like gmail.com , live.com, to use that , but dont know how :D
-//        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-//
-//        // Validate e-mail
-//        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-//            echo("$email is a valid email address");
-//        } else {
-//            echo("$email is not a valid email address");
-//        }
-//
+
+
 
 
 
@@ -36,9 +29,17 @@ if (is_array($loggedUserData[0])){
 
 error_reporting(0); // For not showing any error
 
+function unBanUsers(){
+    global $conn;
+    // Unban all users in DB for whom ban time passed.
+    // in this case no need for prepared statement
+    $conn->query("UPDATE users SET is_banned = 0, ban_until = NULL WHERE is_banned = 1 AND ban_until <= NOW()");
+}
+
 function banCurrentUser(){
     $currentUserId=$_SESSION['id'];
 global $conn;
+
 
 $now = new DateTime('now');
 $now=$now->add(new DateInterval('P1D'));
@@ -53,6 +54,7 @@ $now=$now->add(new DateInterval('P1D'));
 
     $insertSuccess = $stmt->execute();
     $loggedUserData['is_banned']=1;
+
 
 }
 
