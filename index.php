@@ -1,7 +1,7 @@
 <?php 
 include("path.php");
 include(ROOT_PATH . "/app/controllers/topics.php");
-
+usersOnly('/login.php');
 
 $posts = array();
 $postsTitle = 'Recent Posts';

@@ -1,16 +1,19 @@
 <?php include("path.php"); ?>
 <?php include(ROOT_PATH . '/app/controllers/posts.php');
-
+include(ROOT_PATH . '/app/database/connect.php');
+global $post;
+usersOnly('/login.php');
 $topics = selectAll('topics');
 $posts = selectAll('posts', ['published' => 1]);
 
 
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$db_name = 'blog';
+$loggedUserData = (is_array($_SESSION) )
+    ? selectAll('users', ['id'=>$_SESSION['id']])
+    :false;
+if (is_array($loggedUserData[0])){
+    $loggedUserData=$loggedUserData[0];
+}
 
-$conn = new MySQLi($host, $user, $pass, $db_name);
 
 error_reporting(0); // For not showing any error
 
@@ -21,15 +24,23 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
     $email = $_POST['email']; // Get Email from form
     $comment = $_POST['comment']; // Get Comment from form
     $Post_id = $_POST['comment-id'];
+    $singlePostId = (isset($_GET['id']))?intval($_GET['id']):false;
 
     $sql = "INSERT INTO comments (name, email, comment, Post_id) VALUES (?, ?, ?, ?)";
 
+    /** @noinspection PhpUndefinedVariableInspection */
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('sssi', $name, $email, $comment, $Post_id);
     $success = $stmt->execute();
 
+
+
     if ($success) {
         echo "<script>alert('Comment added successfully.')</script>";
+        // Here to add something for seeing how many bad words are in
+        // comment and if is <50 then should post if not then  echo "<script>alert('Comment does not add.')</script>";
+        // and if is just one racist word then to find IP adress and ban that ip adress to coment
+        // oh fuck i need to make it to be from users that can comment not just anybody who came to website
     } else {
         echo "<script>alert('Comment does not add.')</script>";
     }
@@ -60,6 +71,7 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
     <!-- Custom Script -->
     <script src="assets/js/scripts.js"></script>
 
+    <!-- why $post is undefined? -->
     <title><?php echo $post['title']; ?> | Velibor</title>
 </head>
 <body>
@@ -79,6 +91,8 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
         <!-- Main Content Wrapper -->
         <div class="main-content-wrapper">
             <div class="main-content single">
+
+
                 <h1 class="post-title"><?php echo $post['title']; ?></h1>
 
 
@@ -88,13 +102,15 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
                 </div>
 
                 <div class="main-content-wrapper">
+
+
                     <form action="" method="POST" class="row">
                         <div class="row">
                             <div>
-                                <input type="text" name="name" id="name" placeholder="Enter your Name" required>
+                                <input type="hidden" name="name" id="name" value= "<?php echo $loggedUserData['username'] ?>"/>
                             </div>
                             <div >
-                                <input type="email" name="email" id="email" placeholder="Enter your Email" required>
+                                <input type="hidden" name="email" id="email" value= "<?php echo $loggedUserData['email'] ?>"/>
                             </div>
                             <div >
                                 <input type="hidden" name="comment-id" id="comment-id" value= "<?php echo $post['id'] ?>"/>
@@ -148,6 +164,10 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
         <div class="sidebar single">
             <div class="section popular">
                 <h2 class="section-title">Popular</h2>
+                <!-- now posts is undefined if i make it post will it work ?
+                 post and posts are two different variables
+                 oh then it will be problem how does it work
+                 -->
                 <?php foreach ($posts as $p): ?>
                     <div class="post clearfix">
                         <img src="<?php echo BASE_URL . '/assets/images/' . $p['image']; ?>" alt="">
