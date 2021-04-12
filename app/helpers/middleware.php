@@ -1,16 +1,26 @@
 <?php
 
+function blocedUser($redirect = '/index.php')
+{
+    if ($loggedUserData['is_banned']= 1) {
+        $_SESSION['message'] = 'You are blocked from commenting for 24h becaouse of youre ofensive words';
+        $_SESSION['type'] = 'error';
+        header('location: ' . BASE_URL . $redirect);
+        exit(0);
 
-function usersOnly($redirect = '/index.php')
+
+    }
+}
+
+function usersOnly($redirect = '/login.php')
 {
     if (empty($_SESSION['id'])) {
         $_SESSION['message'] = 'You need to login first';
         $_SESSION['type'] = 'error';
-
         header('location: ' . BASE_URL . $redirect);
         exit(0);
 
-        // it works but th
+
     }
 }
 

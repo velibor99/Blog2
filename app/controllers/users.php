@@ -19,6 +19,8 @@ $password = '';
 $passwordConf = '';
 
 
+
+
 function loginUser($user)
 {
     $_SESSION['id'] = $user['id'];

@@ -46,7 +46,9 @@ guestsOnly();
         <label>Email</label>
         <input type="email" name="email"  value="<?php echo $email; ?>" class="text-input">
 
+
       </div>
+
       <div>
         <label>Password</label>
         <input type="password" name="password"  value="<?php echo $password ; ?>" class="text-input">

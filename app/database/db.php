@@ -138,6 +138,21 @@ function getPublishedPosts()
     return $records;
 }
 
+function getBadWords($kind = 1)
+{
+    global $conn;
+    $sql = "SELECT word FROM bad_words  WHERE kind=?";
+
+    $stmt = executeQuery($sql, ['kind' => $kind]);
+    $records = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $recordsFlat = [];
+    foreach ($records as $record) {
+        $recordsFlat[] = $record['word'];
+
+    }
+    return $recordsFlat;
+}
+
 
 function getPostsByTopicId($topic_id)
 {

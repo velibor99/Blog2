@@ -1,7 +1,26 @@
 <?php include("path.php"); ?>
 <?php include(ROOT_PATH . '/app/controllers/posts.php');
+
+//an to make sure email is valid like gmail.com , live.com, to use that , but dont know how :D
+//        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+//
+//        // Validate e-mail
+//        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+//            echo("$email is a valid email address");
+//        } else {
+//            echo("$email is not a valid email address");
+//        }
+//
+
+
+
 include(ROOT_PATH . '/app/database/connect.php');
 global $post;
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 usersOnly('/login.php');
 $topics = selectAll('topics');
 $posts = selectAll('posts', ['published' => 1]);
@@ -17,33 +36,65 @@ if (is_array($loggedUserData[0])){
 
 error_reporting(0); // For not showing any error
 
+function banCurrentUser(){
+    $currentUserId=$_SESSION['id'];
+global $conn;
 
+$now = new DateTime('now');
+$now=$now->add(new DateInterval('P1D'));
+
+    $dateFormatted=$now->format('Y-m-d H:i:s');
+    $stmt = $conn->prepare("UPDATE users SET is_banned = 1, ban_until = '$dateFormatted' WHERE id = ?");
+    $stmt->bind_param('i', $currentUserId);
+
+    if ($stmt===false){
+        die ('heck! '. $conn->error);
+    }
+
+    $insertSuccess = $stmt->execute();
+    $loggedUserData['is_banned']=1;
+
+}
 
 if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADDING IN DATABASE
     $name = $_POST['name']; // Get Name from form
     $email = $_POST['email']; // Get Email from form
-    $comment = $_POST['comment']; // Get Comment from form
+    $comment = trim($_POST['comment']); // Get Comment from form
     $Post_id = $_POST['comment-id'];
     $singlePostId = (isset($_GET['id']))?intval($_GET['id']):false;
 
-    $sql = "INSERT INTO comments (name, email, comment, Post_id) VALUES (?, ?, ?, ?)";
+    $comment=str_replace(chr(10), '', $comment);
+    $badWords = getBadWords(1);
+    $racistWords = getBadWords(2);
 
-    /** @noinspection PhpUndefinedVariableInspection */
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('sssi', $name, $email, $comment, $Post_id);
-    $success = $stmt->execute();
+    $commentWordArray=explode(' ', $comment);
+    $uniqueArray=array_unique (  $commentWordArray);
+    $containsBadWords = count(array_intersect($uniqueArray, $badWords)) > 0;
+    $containsRacistWords = count(array_intersect($uniqueArray, $racistWords)) > 0;
 
+    if ($containsBadWords) {
+        banCurrentUser();
+        blocedUser();
 
+    } elseif ($containsRacistWords) {
+        banCurrentUser();
+        blocedUser();
 
-    if ($success) {
-        echo "<script>alert('Comment added successfully.')</script>";
-        // Here to add something for seeing how many bad words are in
-        // comment and if is <50 then should post if not then  echo "<script>alert('Comment does not add.')</script>";
-        // and if is just one racist word then to find IP adress and ban that ip adress to coment
-        // oh fuck i need to make it to be from users that can comment not just anybody who came to website
     } else {
-        echo "<script>alert('Comment does not add.')</script>";
+        $sql = "INSERT INTO comments (name, email, comment, Post_id) VALUES (?, ?, ?, ?)";
+
+        /** @noinspection PhpUndefinedVariableInspection */
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('sssi', $name, $email, $comment, $Post_id);
+        $insertSuccess = $stmt->execute();
+
+        if ($insertSuccess) {
+            echo "<script>alert('Comment added successfully.')</script>";
+        }
     }
+
+
+
 }
 
 ?>
@@ -103,6 +154,9 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
 
                 <div class="main-content-wrapper">
 
+                    <?php
+                    if($loggedUserData['is_banned']<1){
+                    ?>
 
                     <form action="" method="POST" class="row">
                         <div class="row">
@@ -126,6 +180,9 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
 
 
                     </form>
+                    <?php
+                    };
+                    ?>
                     <div class="prev-comments">
 
 
@@ -164,10 +221,6 @@ if (isset($_POST['submit'])) { // Check press or not Post Comment Button FOR ADD
         <div class="sidebar single">
             <div class="section popular">
                 <h2 class="section-title">Popular</h2>
-                <!-- now posts is undefined if i make it post will it work ?
-                 post and posts are two different variables
-                 oh then it will be problem how does it work
-                 -->
                 <?php foreach ($posts as $p): ?>
                     <div class="post clearfix">
                         <img src="<?php echo BASE_URL . '/assets/images/' . $p['image']; ?>" alt="">

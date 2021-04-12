@@ -13,6 +13,7 @@ function validateUser($user)
         array_push($errors, 'Email is required');
     }
 
+
     if (empty($user['password'])) {
         array_push($errors, 'Password is required');
     }
